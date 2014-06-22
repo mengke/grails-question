@@ -3,6 +3,8 @@ package org.ibntab
 import grails.gsp.TagLib
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.grails.web.mapping.UrlMapping
+import org.codehaus.groovy.grails.web.pages.GroovyPage
+import org.codehaus.groovy.grails.web.pages.TagLibraryLookup
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsWebRequest
 import org.codehaus.groovy.grails.web.util.TypeConvertingMap
 import org.springframework.context.MessageSource
@@ -16,6 +18,7 @@ class BootstrapTagLib {
     //static encodeAsForTags = [tagName: [taglib:'html'], otherTagName: [taglib:'none']]
 
     MessageSource messageSource
+    TagLibraryLookup gspTagLibraryLookup
 
     @CompileStatic
     String messageHelper(String code, Object defaultMessage = null, List args = null, Locale locale = null) {
@@ -209,9 +212,11 @@ class BootstrapTagLib {
         if (currentstep > firststep && !attrs.boolean('omitPrev')) {
             linkTagAttrs.put('class', 'prevLink')
             linkParams.offset = offset - max
+            writer << "<li>"
             writer << callLink((Map)linkTagAttrs.clone()) {
-                (attrs.prev ?: messageSource.getMessage('paginate.prev', null, messageSource.getMessage('default.paginate.prev', null, 'Previous', locale), locale))
+                ("&laquo;")
             }
+            writer << "</li>"
         }
 
         // display steps when steps are enabled and laststep is not firststep
@@ -237,32 +242,40 @@ class BootstrapTagLib {
             // display firststep link when beginstep is not firststep
             if (beginstep > firststep && !attrs.boolean('omitFirst')) {
                 linkParams.offset = 0
+                writer << "<li>"
                 writer << callLink((Map)linkTagAttrs.clone()) {firststep.toString()}
+                writer << "</li>"
             }
             //show a gap if beginstep isn't immediately after firststep, and if were not omitting first or rev
             if (beginstep > firststep+1 && (!attrs.boolean('omitFirst') || !attrs.boolean('omitPrev')) ) {
-                writer << '<span class="step gap">..</span>'
+                writer << '<li class="disabled"><a href="#">..</a></li>'
             }
 
             // display paginate steps
             (beginstep..endstep).each { int i ->
                 if (currentstep == i) {
-                    writer << "<span class=\"currentStep\">${i}</span>"
+                    writer << "<li class=\"active\">"
+                    writer << callLink((Map)linkTagAttrs.clone()) {i.toString()}
+                    writer << "</li>"
                 }
                 else {
                     linkParams.offset = (i - 1) * max
+                    writer << "<li>"
                     writer << callLink((Map)linkTagAttrs.clone()) {i.toString()}
+                    writer << "</li>"
                 }
             }
 
             //show a gap if beginstep isn't immediately before firststep, and if were not omitting first or rev
             if (endstep+1 < laststep && (!attrs.boolean('omitLast') || !attrs.boolean('omitNext'))) {
-                writer << '<span class="step gap">..</span>'
+                writer << '<li class="disabled"><a href="#">..</a></li>'
             }
             // display laststep link when endstep is not laststep
             if (endstep < laststep && !attrs.boolean('omitLast')) {
                 linkParams.offset = (laststep - 1) * max
+                writer << "<li>"
                 writer << callLink((Map)linkTagAttrs.clone()) { laststep.toString() }
+                writer << "</li>"
             }
         }
 
@@ -270,11 +283,16 @@ class BootstrapTagLib {
         if (currentstep < laststep && !attrs.boolean('omitNext')) {
             linkTagAttrs.put('class', 'nextLink')
             linkParams.offset = offset + max
+            writer << "<li>"
             writer << callLink((Map)linkTagAttrs.clone()) {
-                (attrs.next ? attrs.next : messageSource.getMessage('paginate.next', null, messageSource.getMessage('default.paginate.next', null, 'Next', locale), locale))
+                "&raquo;"
             }
+            writer << "</li>"
         }
         writer << "</ul>"
     }
 
+    private callLink(Map attrs, Object body) {
+        GroovyPage.captureTagOutput(gspTagLibraryLookup, 'g', 'link', attrs, body, webRequest)
+    }
 }

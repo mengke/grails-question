@@ -54,9 +54,7 @@
 				</g:each>
 				</tbody>
 			</table>
-			<div class="pagination">
-				<g:paginate total="\${${propertyName}Count ?: 0}" />
-			</div>
+		    <g:paginate total="\${${propertyName}Count ?: 0}" />
 		</div>
 	</body>
 </html>
